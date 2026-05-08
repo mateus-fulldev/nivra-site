@@ -48,6 +48,26 @@ function checkout(){
   }).catch(function(){
     content.innerHTML = '<h2>Erro de conexao</h2><p>Tente novamente.</p><button class=btn-primary onclick=closeModal()>Fechar</button>';
   });
+};});
+  var email = prompt('Digite seu e-mail para confirmar o pedido:');
+  if(!email){modal.style.display='none';return;}
+  var nome = prompt('Digite seu nome:');
+  var endereco = {cep:'00000-000',street:'A definir',number:'0',district:'A definir',city:'A definir',state:'SP'};
+  fetch('https://nivra-backend-s09l.onrender.com/api/pedidos',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({itens:itens,endereco:endereco,metodo_pagamento:'mercadopago',email_cliente:email,nome_cliente:nome||email})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.pedido){
+      cart=[];updateCartUI();
+      toggleCart();
+      content.innerHTML = '<div class=checkmark>checkmark</div><h2>Pedido Confirmado!</h2><p>Obrigado pela sua compra!</p><p class=order-num>Pedido #'+d.pedido.id.slice(0,8).toUpperCase()+'</p><button class=btn-primary onclick=closeModal()>Continuar Comprando</button>';
+    } else {
+      content.innerHTML = '<h2>Erro!</h2><p>'+(d.erro||'Tente novamente')+'</p><button class=btn-primary onclick=closeModal()>Fechar</button>';
+    }
+  }).catch(function(){
+    content.innerHTML = '<h2>Erro de conexao</h2><p>Tente novamente.</p><button class=btn-primary onclick=closeModal()>Fechar</button>';
+  });
 }
 function closeModal(){document.getElementById('checkoutModal').style.display='none';showPage('home');}
 function filterProducts(f,b){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(function(x){x.classList.remove('active');});b.classList.add('active');renderAllProducts(f);}
