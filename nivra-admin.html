@@ -73,6 +73,9 @@
     .toast{position:fixed;bottom:2rem;right:2rem;background:#0a0a0a;color:#fff;padding:.9rem 1.4rem;border-radius:8px;font-size:13px;transform:translateY(100px);opacity:0;transition:all .3s;z-index:200}
     .toast.show{transform:translateY(0);opacity:1}
     #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;margin-left:-220px}
+    .itens-pedido{background:#f5f4f2;border-radius:8px;padding:1rem;margin-top:.5rem;font-size:12px;display:none}
+    .item-linha{padding:.4rem 0;border-bottom:.5px solid #e8e6e2;display:flex;justify-content:space-between;}
+    .item-linha:last-child{border-bottom:none}
   </style>
 </head>
 <body>
@@ -102,7 +105,7 @@
       </div>
     </div>
     <div id="dashboard" class="section">
-      <div class="topbar"><div><h1>Dashboard</h1><p>Visão geral da loja</p></div><a href="../nivra-site/index.html" target="_blank" class="btn btn-outline">Ver Site →</a></div>
+      <div class="topbar"><div><h1>Dashboard</h1><p>Visão geral da loja</p></div></div>
       <div class="stats">
         <div class="stat-card"><div class="stat-label">Total de Pedidos</div><div class="stat-value" id="statPedidos">—</div></div>
         <div class="stat-card"><div class="stat-label">Pedidos Pagos</div><div class="stat-value" id="statPagos">—</div></div>
@@ -132,8 +135,8 @@
         <button class="tab" onclick="filtrarPedidos('shipped',this)">Enviados</button>
         <button class="tab" onclick="filtrarPedidos('delivered',this)">Entregues</button>
       </div>
-      <div class="card"><table><thead><tr><th>ID</th><th>Cliente</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
-      <tbody id="tabelaPedidos"><tr><td colspan="7" class="empty">Nenhum pedido ainda</td></tr></tbody></table></div>
+      <div class="card"><table><thead><tr><th>ID</th><th>Cliente</th><th>Email</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+      <tbody id="tabelaPedidos"><tr><td colspan="8" class="empty">Nenhum pedido ainda</td></tr></tbody></table></div>
     </div>
     <div id="cupons" class="section">
       <div class="topbar"><div><h1>Cupons</h1><p>Gerencie descontos</p></div><button class="btn btn-dark" onclick="abrirModalCupom()">+ Novo Cupom</button></div>
@@ -141,6 +144,17 @@
       <tbody id="tabelaCupons"><tr><td colspan="7" class="empty">Nenhum cupom</td></tr></tbody></table></div>
     </div>
   </main>
+
+  <!-- MODAL ITENS PEDIDO -->
+  <div class="modal-bg" id="modalItens">
+    <div class="modal">
+      <h2 id="modalItensTitulo">Itens do Pedido</h2>
+      <div id="modalItensConteudo"></div>
+      <div class="modal-footer">
+        <button class="btn btn-dark" onclick="document.getElementById('modalItens').classList.remove('open')">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-bg" id="modalProduto">
     <div class="modal">
@@ -158,7 +172,13 @@
           <input type="hidden" id="pImagem"/>
         </div>
         <div class="form-group full"><label>Nome do Produto</label><input id="pNome" placeholder="Ex: Camiseta Oversized"/></div>
-        <div class="form-group"><label>Categoria</label><select id="pCategoria"><option value="casual">Casual</option><option value="fitness">Fitness</option><option value="feminino">Feminino</option><option value="masculino">Masculino</option><option value="lancamentos">Lançamentos</option></select></div>
+        <div class="form-group"><label>Categoria</label><select id="pCategoria">
+          <option value="casual">Casual</option>
+          <option value="fitness">Fitness</option>
+          <option value="feminino">Feminino</option>
+          <option value="masculino">Masculino</option>
+          <option value="lancamentos">Lançamentos</option>
+        </select></div>
         <div class="form-group"><label>Badge</label><input id="pBadge" placeholder="Ex: Novo, Oferta"/></div>
         <div class="form-group"><label>Preço (R$)</label><input id="pPreco" type="number" placeholder="189.90"/></div>
         <div class="form-group"><label>Preço Original (R$)</label><input id="pPrecoOrig" type="number" placeholder="Opcional"/></div>
@@ -254,7 +274,7 @@
         document.getElementById('statClientes').textContent = s.totalClientes;
         var tbody = document.getElementById('tabelaPedidosRecentes');
         if (!data.ultimosPedidos || !data.ultimosPedidos.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum pedido ainda</td></tr>'; return; }
-        tbody.innerHTML = data.ultimosPedidos.map(function(p){ return '<tr><td>#'+p.id.slice(0,8).toUpperCase()+'</td><td>'+(p.nome_cliente||p.customer_email)+'</td><td>R$ '+p.total.toFixed(2).replace('.',',')+'</td><td>'+badgeStatus(p.status)+'</td><td>'+new Date(p.created_at).toLocaleDateString('pt-BR')+'</td></tr>'; }).join('');
+        tbody.innerHTML = data.ultimosPedidos.map(function(p){ return '<tr><td>#'+p.id.slice(0,8).toUpperCase()+'</td><td>'+(p.customer_name||p.customer_email)+'</td><td>R$ '+p.total.toFixed(2).replace('.',',')+'</td><td>'+badgeStatus(p.status)+'</td><td>'+new Date(p.created_at).toLocaleDateString('pt-BR')+'</td></tr>'; }).join('');
       } catch(e){ console.error(e); }
     }
 
@@ -284,7 +304,10 @@
     }
 
     function buscarProdutos(q){ renderProdutos(todosOsProdutos.filter(function(p){ return p.name.toLowerCase().includes(q.toLowerCase()); })); }
-    function catLabel(c){ return {camisetas:'Camisetas',calcas:'Calças e Jaquetas',acessorios:'Acessórios'}[c]||c; }
+    
+    function catLabel(c){ 
+      return {casual:'Casual',fitness:'Fitness',feminino:'Feminino',masculino:'Masculino',lancamentos:'Lancamentos',camisetas:'Camisetas',calcas:'Calcas',acessorios:'Acessorios'}[c]||c; 
+    }
 
     function previewImagem(input) {
       if (!input.files || !input.files[0]) return;
@@ -321,7 +344,7 @@
       editandoId = null;
       document.getElementById('modalProdutoTitulo').textContent = 'Novo Produto';
       ['pNome','pBadge','pPreco','pPrecoOrig','pEstoque','pTamanhos','pDescricao','pImagem'].forEach(function(id){ document.getElementById(id).value=''; });
-      document.getElementById('pCategoria').value = 'camisetas';
+      document.getElementById('pCategoria').value = 'casual';
       document.getElementById('pImagemFile').value = '';
       document.getElementById('uploadPreview').style.display = 'none';
       document.getElementById('uploadArea').style.borderColor = '#e8e6e2';
@@ -332,7 +355,7 @@
       editandoId = p.id;
       document.getElementById('modalProdutoTitulo').textContent = 'Editar Produto';
       document.getElementById('pNome').value = p.name||'';
-      document.getElementById('pCategoria').value = p.category||'camisetas';
+      document.getElementById('pCategoria').value = p.category||'casual';
       document.getElementById('pBadge').value = p.badge||'';
       document.getElementById('pPreco').value = p.price||'';
       document.getElementById('pPrecoOrig').value = p.original_price||'';
@@ -410,16 +433,55 @@
 
     function renderPedidos(lista) {
       var tbody = document.getElementById('tabelaPedidos');
-      if (!lista.length) { tbody.innerHTML='<tr><td colspan="7" class="empty">Nenhum pedido</td></tr>'; return; }
+      if (!lista.length) { tbody.innerHTML='<tr><td colspan="8" class="empty">Nenhum pedido</td></tr>'; return; }
       tbody.innerHTML = lista.map(function(p){
-        return '<tr><td>#'+p.id.slice(0,8).toUpperCase()+'</td><td>'+(p.nome_cliente||p.customer_email)+'</td><td>R$ '+p.total.toFixed(2).replace('.',',')+'</td>'+
+        return '<tr>'+
+          '<td>#'+p.id.slice(0,8).toUpperCase()+'</td>'+
+          '<td>'+(p.customer_name||'—')+'</td>'+
+          '<td>'+(p.customer_email||'—')+'</td>'+
+          '<td>R$ '+p.total.toFixed(2).replace('.',',')+'</td>'+
           '<td>'+(p.payment_status==='paid'?'<span class="badge badge-green">Pago</span>':'<span class="badge badge-amber">Pendente</span>')+'</td>'+
           '<td>'+badgeStatus(p.status)+'</td>'+
           '<td>'+new Date(p.created_at).toLocaleDateString('pt-BR')+'</td>'+
-          '<td><select onchange="atualizarStatusPedido(\''+p.id+'\',this.value)" style="font-size:12px;padding:4px 8px;border-radius:4px;border:.5px solid #e8e6e2">'+
-            ['pending','processing','shipped','delivered','cancelled'].map(function(s){ return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s+'</option>'; }).join('')+
-          '</select></td></tr>';
+          '<td style="display:flex;gap:6px;align-items:center">'+
+            '<select onchange="atualizarStatusPedido(\''+p.id+'\',this.value)" style="font-size:12px;padding:4px 8px;border-radius:4px;border:.5px solid #e8e6e2">'+
+              ['pending','processing','shipped','delivered','cancelled'].map(function(s){ return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s+'</option>'; }).join('')+
+            '</select>'+
+            '<button class="btn btn-outline btn-sm" onclick="verItensPedido(\''+p.id+'\')">📋 Itens</button>'+
+          '</td>'+
+          '</tr>';
       }).join('');
+    }
+
+    async function verItensPedido(id) {
+      try {
+        var res = await fetch(API+'/pedidos/'+id, {headers:{Authorization:'Bearer '+token}});
+        var data = await res.json();
+        if (!data.pedido) { toast('Erro ao buscar pedido'); return; }
+        var p = data.pedido;
+        var itens = p.itens || [];
+        var html = '<div style="margin-bottom:1rem">';
+        html += '<p><strong>Cliente:</strong> '+(p.customer_name||'—')+'</p>';
+        html += '<p><strong>Email:</strong> '+(p.customer_email||'—')+'</p>';
+        html += '<p><strong>Total:</strong> R$ '+Number(p.total).toFixed(2).replace('.',',')+'</p>';
+        html += '</div>';
+        html += '<h4 style="margin-bottom:.8rem;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#888">Itens do Pedido</h4>';
+        if (!itens.length) {
+          html += '<p style="color:#888;font-size:13px">Nenhum item encontrado.</p>';
+        } else {
+          itens.forEach(function(i){
+            html += '<div class="item-linha">';
+            html += '<span><strong>'+i.product_name+'</strong>';
+            if(i.size) html += ' <span class="badge badge-gray">Tam: '+i.size+'</span>';
+            html += ' × '+i.quantity+'</span>';
+            html += '<span>R$ '+Number(i.total_price).toFixed(2).replace('.',',')+'</span>';
+            html += '</div>';
+          });
+        }
+        document.getElementById('modalItensTitulo').textContent = 'Pedido #'+id.slice(0,8).toUpperCase();
+        document.getElementById('modalItensConteudo').innerHTML = html;
+        document.getElementById('modalItens').classList.add('open');
+      } catch(e) { toast('Erro: '+e.message); }
     }
 
     function filtrarPedidos(filtro, btn) {
