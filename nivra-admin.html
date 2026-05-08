@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NIVRA — Painel Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#f5f4f2;color:#2e2c2a;min-height:100vh}
+    button{cursor:pointer;font-family:inherit;border:none}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:#0a0a0a;color:#fff;padding:2rem 1.5rem;display:flex;flex-direction:column;gap:2rem;z-index:10}
+    .sidebar-logo{font-size:1.3rem;letter-spacing:6px;font-weight:500}
+    .sidebar-logo span{font-size:10px;display:block;letter-spacing:2px;color:#666;margin-top:4px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-radius:6px;font-size:13px;color:#aaa;cursor:pointer;transition:all .2s}
+    .nav-item:hover,.nav-item.active{background:#1a1a1a;color:#fff}
+    .main{margin-left:220px;padding:2rem}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+    .topbar h1{font-size:1.4rem;font-weight:500}
+    .topbar p{font-size:13px;color:#888;margin-top:2px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+    .stat-card{background:#fff;border-radius:10px;padding:1.2rem 1.5rem;border:.5px solid #e8e6e2}
+    .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:.5rem}
+    .stat-value{font-size:1.8rem;font-weight:500}
+    .card{background:#fff;border-radius:10px;border:.5px solid #e8e6e2;overflow:hidden}
+    .card-header{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 1.5rem;border-bottom:.5px solid #e8e6e2}
+    .card-header h2{font-size:15px;font-weight:500}
+    table{width:100%;border-collapse:collapse}
+    th{background:#f5f4f2;padding:.8rem 1rem;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;font-weight:500}
+    td{padding:.9rem 1rem;font-size:13px;border-bottom:.5px solid #f5f4f2;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:#fafaf8}
+    .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500}
+    .badge-green{background:#e1f5ee;color:#0f6e56}
+    .badge-red{background:#fcebeb;color:#a32d2d}
+    .badge-amber{background:#faeeda;color:#854f0b}
+    .badge-gray{background:#f1efe8;color:#5f5e5a}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:.6rem 1.2rem;border-radius:6px;font-size:13px;font-weight:500;transition:all .2s}
+    .btn-dark{background:#0a0a0a;color:#fff}
+    .btn-dark:hover{background:#333}
+    .btn-outline{background:transparent;border:.5px solid #e8e6e2;color:#2e2c2a}
+    .btn-outline:hover{background:#f5f4f2}
+    .btn-red{background:#fcebeb;color:#a32d2d}
+    .btn-red:hover{background:#f7c1c1}
+    .btn-sm{padding:.4rem .8rem;font-size:12px}
+    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+    .modal-bg.open{display:flex}
+    .modal{background:#fff;border-radius:12px;padding:2rem;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+    .modal h2{font-size:1.1rem;font-weight:500;margin-bottom:1.5rem}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .form-group{display:flex;flex-direction:column;gap:.4rem}
+    .form-group.full{grid-column:1/-1}
+    label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:#888}
+    input,select,textarea{padding:.7rem .9rem;border:.5px solid #e8e6e2;border-radius:6px;font-family:inherit;font-size:13px;outline:none;transition:border .2s;width:100%}
+    input:focus,select:focus,textarea:focus{border-color:#0a0a0a}
+    textarea{resize:vertical;min-height:80px}
+    .modal-footer{display:flex;gap:.8rem;justify-content:flex-end;margin-top:1.5rem;padding-top:1.5rem;border-top:.5px solid #e8e6e2}
+    .upload-area{border:2px dashed #e8e6e2;border-radius:8px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#fafaf8}
+    .upload-area:hover{border-color:#0a0a0a;background:#f5f4f2}
+    .upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .upload-icon{font-size:2.5rem;margin-bottom:.5rem}
+    .upload-text{font-size:13px;color:#888}
+    .upload-text strong{color:#0a0a0a;display:block;margin-bottom:.3rem}
+    .upload-preview{width:100%;height:180px;object-fit:cover;border-radius:8px;margin-top:1rem;display:none;border:.5px solid #e8e6e2}
+    .upload-status{margin-top:.5rem;font-size:12px;color:#0f6e56;display:none}
+    .img-preview{width:48px;height:48px;border-radius:6px;object-fit:cover;background:#f5f4f2}
+    .tabs{display:flex;gap:.5rem;margin-bottom:1.5rem}
+    .tab{padding:.6rem 1.2rem;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:.5px solid #e8e6e2;background:transparent;color:#888;transition:all .2s}
+    .tab.active{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
+    .section{display:none}
+    .section.active{display:block}
+    .empty{text-align:center;padding:3rem;color:#888;font-size:14px}
+    .toast{position:fixed;bottom:2rem;right:2rem;background:#0a0a0a;color:#fff;padding:.9rem 1.4rem;border-radius:8px;font-size:13px;transform:translateY(100px);opacity:0;transition:all .3s;z-index:200}
+    .toast.show{transform:translateY(0);opacity:1}
+    #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;margin-left:-220px}
+  </style>
+</head>
+<body>
+  <div class="sidebar" id="sidebar" style="display:none">
+    <div class="sidebar-logo">NIVRA<span>Painel Admin</span></div>
+    <nav style="display:flex;flex-direction:column;gap:.3rem">
+      <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</div>
+      <div class="nav-item" onclick="showSection('produtos')">👕 Produtos</div>
+      <div class="nav-item" onclick="showSection('pedidos')">📦 Pedidos</div>
+      <div class="nav-item" onclick="showSection('cupons')">🎟️ Cupons</div>
+    </nav>
+    <div style="margin-top:auto">
+      <div style="font-size:12px;color:#555;margin-bottom:.5rem">Logado como</div>
+      <div style="font-size:13px;color:#aaa" id="adminEmail">—</div>
+      <button class="btn btn-outline" style="margin-top:1rem;width:100%;color:#aaa;border-color:#333" onclick="logout()">Sair</button>
+    </div>
+  </div>
+  <main class="main">
+    <div id="loginScreen">
+      <div style="background:#fff;padding:2.5rem;border-radius:12px;width:360px;border:.5px solid #e8e6e2">
+        <div style="font-size:1.4rem;letter-spacing:5px;font-weight:500;margin-bottom:.5rem">NIVRA</div>
+        <div style="font-size:13px;color:#888;margin-bottom:2rem">Painel Administrativo</div>
+        <div class="form-group" style="margin-bottom:1rem"><label>E-mail</label><input type="email" id="loginEmail" value="admin@nivra.com.br"/></div>
+        <div class="form-group" style="margin-bottom:1.5rem"><label>Senha</label><input type="password" id="loginSenha" value="Nivra@2025!"/></div>
+        <button class="btn btn-dark" style="width:100%;justify-content:center;padding:.9rem" onclick="fazerLogin()">Entrar</button>
+        <div id="loginErro" style="color:#a32d2d;font-size:12px;margin-top:.8rem;display:none"></div>
+      </div>
+    </div>
+    <div id="dashboard" class="section">
+      <div class="topbar"><div><h1>Dashboard</h1><p>Visão geral da loja</p></div><a href="../nivra-site/index.html" target="_blank" class="btn btn-outline">Ver Site →</a></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-label">Total de Pedidos</div><div class="stat-value" id="statPedidos">—</div></div>
+        <div class="stat-card"><div class="stat-label">Pedidos Pagos</div><div class="stat-value" id="statPagos">—</div></div>
+        <div class="stat-card"><div class="stat-label">Receita Total</div><div class="stat-value" id="statReceita">—</div></div>
+        <div class="stat-card"><div class="stat-label">Clientes</div><div class="stat-value" id="statClientes">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Últimos Pedidos</h2></div>
+        <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Status</th><th>Data</th></tr></thead>
+        <tbody id="tabelaPedidosRecentes"><tr><td colspan="5" class="empty">Nenhum pedido ainda</td></tr></tbody></table>
+      </div>
+    </div>
+    <div id="produtos" class="section">
+      <div class="topbar"><div><h1>Produtos</h1><p>Gerencie seu catálogo</p></div><button class="btn btn-dark" onclick="abrirModalProduto()">+ Novo Produto</button></div>
+      <div class="card">
+        <div class="card-header"><h2>Todos os Produtos</h2><input type="text" placeholder="Buscar produto..." style="width:200px" oninput="buscarProdutos(this.value)"/></div>
+        <table><thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tabelaProdutos"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody></table>
+      </div>
+    </div>
+    <div id="pedidos" class="section">
+      <div class="topbar"><div><h1>Pedidos</h1><p>Acompanhe todos os pedidos</p></div></div>
+      <div class="tabs">
+        <button class="tab active" onclick="filtrarPedidos('todos',this)">Todos</button>
+        <button class="tab" onclick="filtrarPedidos('pending',this)">Pendentes</button>
+        <button class="tab" onclick="filtrarPedidos('processing',this)">Processando</button>
+        <button class="tab" onclick="filtrarPedidos('shipped',this)">Enviados</button>
+        <button class="tab" onclick="filtrarPedidos('delivered',this)">Entregues</button>
+      </div>
+      <div class="card"><table><thead><tr><th>ID</th><th>Cliente</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+      <tbody id="tabelaPedidos"><tr><td colspan="7" class="empty">Nenhum pedido ainda</td></tr></tbody></table></div>
+    </div>
+    <div id="cupons" class="section">
+      <div class="topbar"><div><h1>Cupons</h1><p>Gerencie descontos</p></div><button class="btn btn-dark" onclick="abrirModalCupom()">+ Novo Cupom</button></div>
+      <div class="card"><table><thead><tr><th>Código</th><th>Tipo</th><th>Desconto</th><th>Mínimo</th><th>Usos</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody id="tabelaCupons"><tr><td colspan="7" class="empty">Nenhum cupom</td></tr></tbody></table></div>
+    </div>
+  </main>
+
+  <div class="modal-bg" id="modalProduto">
+    <div class="modal">
+      <h2 id="modalProdutoTitulo">Novo Produto</h2>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>📷 Imagem do Produto</label>
+          <div class="upload-area" id="uploadArea">
+            <input type="file" id="pImagemFile" accept="image/jpeg,image/png,image/webp" onchange="previewImagem(this)"/>
+            <div class="upload-icon">📷</div>
+            <div class="upload-text"><strong>Clique para selecionar uma foto</strong>JPG, PNG ou WEBP — máx 5MB</div>
+          </div>
+          <img id="uploadPreview" class="upload-preview" src="" alt="Preview"/>
+          <div class="upload-status" id="uploadStatus">⬆️ Enviando imagem...</div>
+          <input type="hidden" id="pImagem"/>
+        </div>
+        <div class="form-group full"><label>Nome do Produto</label><input id="pNome" placeholder="Ex: Camiseta Oversized"/></div>
+        <div class="form-group"><label>Categoria</label><select id="pCategoria"><option value="casual">Casual</option><option value="fitness">Fitness</option><option value="feminino">Feminino</option><option value="masculino">Masculino</option><option value="lancamentos">Lançamentos</option></select></div>
+        <div class="form-group"><label>Badge</label><input id="pBadge" placeholder="Ex: Novo, Oferta"/></div>
+        <div class="form-group"><label>Preço (R$)</label><input id="pPreco" type="number" placeholder="189.90"/></div>
+        <div class="form-group"><label>Preço Original (R$)</label><input id="pPrecoOrig" type="number" placeholder="Opcional"/></div>
+        <div class="form-group"><label>Estoque</label><input id="pEstoque" type="number" placeholder="50"/></div>
+        <div class="form-group full"><label>Tamanhos (separados por vírgula)</label><input id="pTamanhos" placeholder="P, M, G, GG"/></div>
+        <div class="form-group full"><label>Descrição</label><textarea id="pDescricao" placeholder="Descreva o produto..."></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModalProduto()">Cancelar</button>
+        <button class="btn btn-dark" id="btnSalvar" onclick="salvarProduto()">Salvar Produto</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modalCupom">
+    <div class="modal">
+      <h2>Novo Cupom</h2>
+      <div class="form-grid">
+        <div class="form-group full"><label>Código</label><input id="cCodigo" placeholder="Ex: VERAO20"/></div>
+        <div class="form-group"><label>Tipo</label><select id="cTipo"><option value="percent">Percentual (%)</option><option value="fixed">Valor fixo (R$)</option></select></div>
+        <div class="form-group"><label>Desconto</label><input id="cValor" type="number" placeholder="10"/></div>
+        <div class="form-group"><label>Pedido Mínimo (R$)</label><input id="cMinimo" type="number" placeholder="150"/></div>
+        <div class="form-group"><label>Máx. de Usos</label><input id="cMaxUsos" type="number" placeholder="100"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModalCupom()">Cancelar</button>
+        <button class="btn btn-dark" onclick="salvarCupom()">Criar Cupom</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var API = 'https://nivra-backend-s09l.onrender.com/api';
+    var token = localStorage.getItem('nivra_admin_token');
+    var todosOsProdutos = [];
+    var todosPedidos = [];
+    var editandoId = null;
+
+    function init() {
+      if (token) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'flex';
+        showSection('dashboard');
+      } else {
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('sidebar').style.display = 'none';
+      }
+    }
+
+    async function fazerLogin() {
+      var email = document.getElementById('loginEmail').value;
+      var senha = document.getElementById('loginSenha').value;
+      try {
+        var res = await fetch(API + '/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:email, senha:senha}) });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao fazer login');
+        if (data.usuario.role !== 'admin') throw new Error('Acesso negado.');
+        token = data.token;
+        localStorage.setItem('nivra_admin_token', token);
+        document.getElementById('adminEmail').textContent = data.usuario.email;
+        document.getElementById('loginErro').style.display = 'none';
+        init();
+      } catch(e) {
+        var el = document.getElementById('loginErro');
+        el.textContent = e.message;
+        el.style.display = 'block';
+      }
+    }
+
+    function logout() { localStorage.removeItem('nivra_admin_token'); token = null; init(); }
+
+    function showSection(name) {
+      document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+      document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+      document.getElementById(name).classList.add('active');
+      document.querySelector('[onclick="showSection(\'' + name + '\')"]').classList.add('active');
+      if (name==='dashboard') carregarDashboard();
+      if (name==='produtos') carregarProdutos();
+      if (name==='pedidos') carregarPedidos();
+      if (name==='cupons') carregarCupons();
+    }
+
+    async function carregarDashboard() {
+      try {
+        var res = await fetch(API + '/admin/dashboard', {headers:{Authorization:'Bearer '+token}});
+        var data = await res.json();
+        var s = data.stats;
+        document.getElementById('statPedidos').textContent = s.totalPedidos;
+        document.getElementById('statPagos').textContent = s.pedidosPagos;
+        document.getElementById('statReceita').textContent = 'R$ ' + (s.receita||0).toFixed(2).replace('.',',');
+        document.getElementById('statClientes').textContent = s.totalClientes;
+        var tbody = document.getElementById('tabelaPedidosRecentes');
+        if (!data.ultimosPedidos || !data.ultimosPedidos.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum pedido ainda</td></tr>'; return; }
+        tbody.innerHTML = data.ultimosPedidos.map(function(p){ return '<tr><td>#'+p.id.slice(0,8).toUpperCase()+'</td><td>'+(p.nome_cliente||p.customer_email)+'</td><td>R$ '+p.total.toFixed(2).replace('.',',')+'</td><td>'+badgeStatus(p.status)+'</td><td>'+new Date(p.created_at).toLocaleDateString('pt-BR')+'</td></tr>'; }).join('');
+      } catch(e){ console.error(e); }
+    }
+
+    async function carregarProdutos() {
+      try {
+        var res = await fetch(API + '/produtos');
+        var data = await res.json();
+        todosOsProdutos = data.produtos || [];
+        renderProdutos(todosOsProdutos);
+      } catch(e){ console.error(e); }
+    }
+
+    function renderProdutos(lista) {
+      var tbody = document.getElementById('tabelaProdutos');
+      if (!lista.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum produto</td></tr>'; return; }
+      tbody.innerHTML = lista.map(function(p){
+        var img = p.images && p.images[0] ? p.images[0] : '';
+        return '<tr>'+
+          '<td style="display:flex;align-items:center;gap:10px">'+(img?'<img src="'+img+'" class="img-preview" onerror="this.style.display=\'none\'"/>':'<div class="img-preview"></div>')+'<div><div style="font-weight:500">'+p.name+'</div><div style="font-size:11px;color:#888">'+p.slug+'</div></div></td>'+
+          '<td>'+catLabel(p.category)+'</td>'+
+          '<td>R$ '+p.price.toFixed(2).replace('.',',')+'</td>'+
+          '<td><span style="display:flex;align-items:center;gap:6px">'+(p.stock<=5?'<span class="badge badge-red">'+p.stock+'</span>':'<span class="badge badge-green">'+p.stock+'</span>')+'<button class="btn btn-outline btn-sm" onclick="editarEstoque(\''+p.id+'\','+p.stock+')">✏️</button></span></td>'+
+          '<td>'+(p.is_active?'<span class="badge badge-green">Ativo</span>':'<span class="badge badge-gray">Inativo</span>')+'</td>'+
+          '<td style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick=\'editarProduto('+JSON.stringify(p)+')\'>Editar</button><button class="btn btn-red btn-sm" onclick="deletarProduto(\''+p.id+'\')">Remover</button></td>'+
+          '</tr>';
+      }).join('');
+    }
+
+    function buscarProdutos(q){ renderProdutos(todosOsProdutos.filter(function(p){ return p.name.toLowerCase().includes(q.toLowerCase()); })); }
+    function catLabel(c){ return {camisetas:'Camisetas',calcas:'Calças e Jaquetas',acessorios:'Acessórios'}[c]||c; }
+
+    function previewImagem(input) {
+      if (!input.files || !input.files[0]) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var prev = document.getElementById('uploadPreview');
+        prev.src = e.target.result;
+        prev.style.display = 'block';
+        document.getElementById('uploadArea').style.borderColor = '#0a0a0a';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    async function fazerUpload() {
+      var fileInput = document.getElementById('pImagemFile');
+      if (!fileInput.files || !fileInput.files[0]) return null;
+      var formData = new FormData();
+      formData.append('imagem', fileInput.files[0]);
+      document.getElementById('uploadStatus').style.display = 'block';
+      try {
+        var res = await fetch(API + '/upload', {method:'POST', body:formData});
+        var data = await res.json();
+        document.getElementById('uploadStatus').style.display = 'none';
+        if (!res.ok) throw new Error(data.erro);
+        return data.url;
+      } catch(e) {
+        document.getElementById('uploadStatus').style.display = 'none';
+        toast('Erro no upload: ' + e.message);
+        return null;
+      }
+    }
+
+    function abrirModalProduto() {
+      editandoId = null;
+      document.getElementById('modalProdutoTitulo').textContent = 'Novo Produto';
+      ['pNome','pBadge','pPreco','pPrecoOrig','pEstoque','pTamanhos','pDescricao','pImagem'].forEach(function(id){ document.getElementById(id).value=''; });
+      document.getElementById('pCategoria').value = 'camisetas';
+      document.getElementById('pImagemFile').value = '';
+      document.getElementById('uploadPreview').style.display = 'none';
+      document.getElementById('uploadArea').style.borderColor = '#e8e6e2';
+      document.getElementById('modalProduto').classList.add('open');
+    }
+
+    function editarProduto(p) {
+      editandoId = p.id;
+      document.getElementById('modalProdutoTitulo').textContent = 'Editar Produto';
+      document.getElementById('pNome').value = p.name||'';
+      document.getElementById('pCategoria').value = p.category||'camisetas';
+      document.getElementById('pBadge').value = p.badge||'';
+      document.getElementById('pPreco').value = p.price||'';
+      document.getElementById('pPrecoOrig').value = p.original_price||'';
+      document.getElementById('pEstoque').value = p.stock||'';
+      document.getElementById('pTamanhos').value = (p.sizes||[]).join(', ');
+      document.getElementById('pDescricao').value = p.description||'';
+      document.getElementById('pImagem').value = (p.images&&p.images[0])?p.images[0]:'';
+      document.getElementById('pImagemFile').value = '';
+      var prev = document.getElementById('uploadPreview');
+      if (p.images&&p.images[0]) { prev.src=p.images[0]; prev.style.display='block'; } else prev.style.display='none';
+      document.getElementById('modalProduto').classList.add('open');
+    }
+
+    function fecharModalProduto(){ document.getElementById('modalProduto').classList.remove('open'); }
+
+    async function salvarProduto() {
+      var btn = document.getElementById('btnSalvar');
+      btn.textContent = 'Salvando...'; btn.disabled = true;
+      var urlImagem = document.getElementById('pImagem').value;
+      var fileInput = document.getElementById('pImagemFile');
+      if (fileInput.files && fileInput.files[0]) {
+        var uploadUrl = await fazerUpload();
+        if (uploadUrl) urlImagem = uploadUrl;
+      }
+      var body = {
+        nome: document.getElementById('pNome').value,
+        categoria: document.getElementById('pCategoria').value,
+        badge: document.getElementById('pBadge').value||null,
+        preco: parseFloat(document.getElementById('pPreco').value),
+        preco_original: parseFloat(document.getElementById('pPrecoOrig').value)||null,
+        estoque: parseInt(document.getElementById('pEstoque').value)||0,
+        imagens: urlImagem ? [urlImagem] : [],
+        tamanhos: document.getElementById('pTamanhos').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
+        descricao: document.getElementById('pDescricao').value,
+      };
+      if (!body.nome||!body.categoria||!body.preco) { toast('Preencha nome, categoria e preço!'); btn.textContent='Salvar Produto'; btn.disabled=false; return; }
+      try {
+        var url = editandoId ? API+'/produtos/'+editandoId : API+'/produtos';
+        var method = editandoId ? 'PUT' : 'POST';
+        var res = await fetch(url, {method:method, headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify(body)});
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        toast(editandoId ? '✅ Produto atualizado!' : '✅ Produto criado!');
+        fecharModalProduto();
+        carregarProdutos();
+      } catch(e) { toast('Erro: '+e.message); }
+      btn.textContent='Salvar Produto'; btn.disabled=false;
+    }
+
+    async function editarEstoque(id, atual) {
+      var novo = prompt('Estoque atual: '+atual+'\nDigite o novo estoque:');
+      if (novo===null||isNaN(novo)) return;
+      try {
+        await fetch(API+'/produtos/'+id+'/estoque', {method:'PATCH', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify({estoque:parseInt(novo)})});
+        toast('✅ Estoque atualizado!'); carregarProdutos();
+      } catch(e){ toast('Erro: '+e.message); }
+    }
+
+    async function deletarProduto(id) {
+      if (!confirm('Remover este produto?')) return;
+      try {
+        await fetch(API+'/produtos/'+id, {method:'DELETE', headers:{Authorization:'Bearer '+token}});
+        toast('✅ Produto removido!'); carregarProdutos();
+      } catch(e){ toast('Erro: '+e.message); }
+    }
+
+    async function carregarPedidos() {
+      try {
+        var res = await fetch(API+'/admin/pedidos', {headers:{Authorization:'Bearer '+token}});
+        var data = await res.json();
+        todosPedidos = data.pedidos||[];
+        renderPedidos(todosPedidos);
+      } catch(e){ console.error(e); }
+    }
+
+    function renderPedidos(lista) {
+      var tbody = document.getElementById('tabelaPedidos');
+      if (!lista.length) { tbody.innerHTML='<tr><td colspan="7" class="empty">Nenhum pedido</td></tr>'; return; }
+      tbody.innerHTML = lista.map(function(p){
+        return '<tr><td>#'+p.id.slice(0,8).toUpperCase()+'</td><td>'+(p.nome_cliente||p.customer_email)+'</td><td>R$ '+p.total.toFixed(2).replace('.',',')+'</td>'+
+          '<td>'+(p.payment_status==='paid'?'<span class="badge badge-green">Pago</span>':'<span class="badge badge-amber">Pendente</span>')+'</td>'+
+          '<td>'+badgeStatus(p.status)+'</td>'+
+          '<td>'+new Date(p.created_at).toLocaleDateString('pt-BR')+'</td>'+
+          '<td><select onchange="atualizarStatusPedido(\''+p.id+'\',this.value)" style="font-size:12px;padding:4px 8px;border-radius:4px;border:.5px solid #e8e6e2">'+
+            ['pending','processing','shipped','delivered','cancelled'].map(function(s){ return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s+'</option>'; }).join('')+
+          '</select></td></tr>';
+      }).join('');
+    }
+
+    function filtrarPedidos(filtro, btn) {
+      document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');}); btn.classList.add('active');
+      renderPedidos(filtro==='todos'?todosPedidos:todosPedidos.filter(function(p){return p.status===filtro;}));
+    }
+
+    async function atualizarStatusPedido(id, status) {
+      try {
+        await fetch(API+'/admin/pedidos/'+id+'/status', {method:'PATCH', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify({status:status})});
+        toast('✅ Status atualizado!');
+      } catch(e){ toast('Erro: '+e.message); }
+    }
+
+    function badgeStatus(s) {
+      var m = {pending:'<span class="badge badge-amber">Pendente</span>',processing:'<span class="badge badge-green">Processando</span>',shipped:'<span class="badge badge-green">Enviado</span>',delivered:'<span class="badge badge-green">Entregue</span>',cancelled:'<span class="badge badge-red">Cancelado</span>'};
+      return m[s]||'<span class="badge badge-gray">'+s+'</span>';
+    }
+
+    async function carregarCupons() {
+      try {
+        var res = await fetch(API+'/cupons', {headers:{Authorization:'Bearer '+token}});
+        var data = await res.json();
+        var tbody = document.getElementById('tabelaCupons');
+        if (!data.cupons||!data.cupons.length) { tbody.innerHTML='<tr><td colspan="7" class="empty">Nenhum cupom</td></tr>'; return; }
+        tbody.innerHTML = data.cupons.map(function(c){
+          return '<tr><td><strong>'+c.code+'</strong></td><td>'+(c.type==='percent'?'Percentual':'Valor fixo')+'</td><td>'+(c.type==='percent'?c.value+'%':'R$ '+c.value)+'</td><td>R$ '+c.min_order+'</td><td>'+c.used_count+'/'+c.max_uses+'</td><td>'+(c.is_active?'<span class="badge badge-green">Ativo</span>':'<span class="badge badge-gray">Inativo</span>')+'</td><td><button class="btn btn-red btn-sm" onclick="deletarCupom(\''+c.id+'\')">Desativar</button></td></tr>';
+        }).join('');
+      } catch(e){ console.error(e); }
+    }
+
+    function abrirModalCupom(){ document.getElementById('modalCupom').classList.add('open'); }
+    function fecharModalCupom(){ document.getElementById('modalCupom').classList.remove('open'); }
+
+    async function salvarCupom() {
+      var body = { codigo:document.getElementById('cCodigo').value.toUpperCase(), tipo:document.getElementById('cTipo').value, valor:parseFloat(document.getElementById('cValor').value), minimo:parseFloat(document.getElementById('cMinimo').value)||0, max_usos:parseInt(document.getElementById('cMaxUsos').value)||100 };
+      if (!body.codigo||!body.valor) { toast('Preencha código e desconto!'); return; }
+      try {
+        var res = await fetch(API+'/cupons', {method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify(body)});
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        toast('✅ Cupom criado!'); fecharModalCupom(); carregarCupons();
+      } catch(e){ toast('Erro: '+e.message); }
+    }
+
+    async function deletarCupom(id) {
+      if (!confirm('Desativar este cupom?')) return;
+      try {
+        await fetch(API+'/cupons/'+id, {method:'DELETE', headers:{Authorization:'Bearer '+token}});
+        toast('✅ Cupom desativado!'); carregarCupons();
+      } catch(e){ toast('Erro: '+e.message); }
+    }
+
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(function(){ t.classList.remove('show'); }, 3000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
